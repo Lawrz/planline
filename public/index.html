@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planline: project planner</title>
+<meta name="description" content="A lightweight project planner with a Gantt chart, critical path, progress tracking and multiple saved projects.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--head:#e6eaef;--ink:#1d2733;--muted:#6b7785;--line:#d9dee4;--we:#f3f5f8;--accent:#2f6fdd;--crit:#d6402b;--today:#d99a00;--tint:#fdecea;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12171d;--panel:#1a2129;--head:#222b35;--ink:#e6ebf0;--muted:#8b97a3;--line:#2c3641;--we:#1e262e;--accent:#5b97f5;--crit:#ef6a55;--today:#e5b02e;--tint:#3a2224;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12171d;--panel:#1a2129;--head:#222b35;--ink:#e6ebf0;--muted:#8b97a3;--line:#2c3641;--we:#1e262e;--accent:#5b97f5;--crit:#ef6a55;--today:#e5b02e;--tint:#3a2224;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;height:100%;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:13px/1.4 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+#bar .grp{display:flex;gap:6px;align-items:center}
+#pname{width:200px;font-weight:600;font-size:15px;border:1px solid transparent;border-radius:5px;padding:4px 6px;background:transparent}
+#pname:hover,#pname:focus{border-color:var(--line);background:var(--bg)}
+#projects{max-width:180px;padding:5px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
+#sum{margin-left:auto;display:flex;gap:16px;color:var(--muted)}
+#sum b{color:var(--ink);font-weight:600}
+#warn{display:none;padding:6px 14px;background:var(--tint);color:var(--crit);border-bottom:1px solid var(--line)}
+#wrap{flex:1;overflow:auto;background:var(--panel);position:relative}
+#inner{display:flex;align-items:flex-start;min-width:max-content}
+#left{position:sticky;left:0;z-index:4;width:884px;flex:none;background:var(--panel);border-right:2px solid var(--line)}
+.row,.hd{display:grid;grid-template-columns:28px 196px 108px 44px 50px 68px 80px 96px 56px 42px 116px;align-items:center;height:32px;border-bottom:1px solid var(--line)}
+.hd{height:44px;position:sticky;top:0;z-index:3;background:var(--head);font-weight:600;color:var(--muted)}
+.hd span{padding:0 6px}
+.row input{width:100%;height:100%;min-width:0;border:0;background:transparent;padding:0 6px;font-size:13px}
+.row input[type=number]{padding-right:2px}
+.row input.auto{color:var(--muted);font-style:italic}
+.row .num{text-align:center;color:var(--muted)}
+.row .ro{padding:0 6px;color:var(--muted);white-space:nowrap}
+.row.crit{box-shadow:inset 3px 0 0 var(--crit)}
+.row.crit .num{color:var(--crit);font-weight:600}
+.row.cyc input[data-f=p]{background:var(--tint);color:var(--crit)}
+.acts{display:flex;gap:2px;padding-left:4px}
+.acts button{padding:0;width:18px;height:20px;line-height:1;border:0;background:transparent;color:var(--muted)}
+.acts button:hover{color:var(--crit)}
+#add{margin:8px}
+#right{flex:none}
+#gh{position:sticky;top:0;z-index:2;display:block}
+#gb{display:block;touch-action:pan-x pan-y}
+svg text{font-family:inherit}
+.mo{fill:var(--head);stroke:var(--line)}.mot{fill:var(--ink);font-size:12px;font-weight:600}
+.dt{fill:var(--muted);font-size:10px;text-anchor:middle}
+.we{fill:var(--we)}.gl{stroke:var(--line);stroke-width:1}
+.bar{fill:var(--accent);cursor:grab;touch-action:none}.bar.crit{fill:var(--crit)}
+.flt{fill:var(--accent);opacity:.28}
+.grip{fill:transparent;cursor:ew-resize;touch-action:none}
+.lbl{fill:var(--ink);font-size:12px;pointer-events:none}
+.today{stroke:var(--today);stroke-width:2}
+.arw{fill:none;stroke:var(--muted);stroke-width:1.2}.arw.crit{stroke:var(--crit);stroke-width:1.6}
+.ah{fill:var(--muted)}.ah.crit{fill:var(--crit)}
+#foot{padding:8px 14px;background:var(--panel);border-top:1px solid var(--line);color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 20px}
+#foot b{color:var(--crit)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 14px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+#toast.on{opacity:1}
+@media (max-width:900px){#left{position:static}.hd{position:sticky}}
+.nm{display:flex;align-items:center;min-width:0;height:100%}.nm input{flex:1}
+.tg{width:16px;flex:none;padding:0;border:0;background:transparent;color:var(--muted)}
+.row.sum input[data-f=n]{font-weight:600}
+.row input:disabled{color:var(--muted);font-style:normal;-webkit-text-fill-color:currentColor;opacity:1}
+.st{display:flex;align-items:center;gap:5px;font-size:12px;padding:0 4px!important}
+.st::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.st.done::before{background:#2e9d62}.st.prog::before{background:var(--accent)}.st.late::before{background:var(--crit)}
+.acts{padding-left:2px}.acts button{width:20px}.acts [data-act=cm]{width:32px}
+.sumbar{fill:var(--ink);opacity:.8}.prog{fill:#000;opacity:.3;pointer-events:none}.base{fill:var(--muted);opacity:.75}
+#cm{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:320px;max-width:calc(100vw - 28px);max-height:60vh;display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.25);z-index:15}
+#cm[hidden]{display:none}
+#cm header{display:flex;justify-content:space-between;gap:8px;align-items:center}
+#cml{overflow:auto;display:flex;flex-direction:column;gap:8px}
+.c{background:var(--bg);border-radius:6px;padding:6px 8px}.c p,.none{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}.none{color:var(--muted)}
+.cd{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}.cd button{border:0;background:transparent;padding:0 4px;color:var(--muted)}
+#cmi{width:100%;resize:vertical;padding:6px;border:1px solid var(--line);border-radius:5px;background:var(--bg);font:inherit;color:inherit}
+.ss{color:var(--muted);font-size:12px}
+#gate{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.5);z-index:30;padding:16px}
+#gate[hidden],#conflict[hidden]{display:none}
+#gform{width:340px;max-width:100%;display:flex;flex-direction:column;gap:10px;padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+#gform h2{margin:0;font-size:18px}#gform p{margin:0;color:var(--muted)}
+#gform label{display:flex;flex-direction:column;gap:4px;font-weight:500}
+#gkey{padding:8px;border:1px solid var(--line);border-radius:5px;background:var(--bg)}
+#conflict{padding:6px 14px;background:var(--tint);color:var(--crit);border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<div id="bar">
+  <div class="grp"><input id="pname" aria-label="Plan name" value="Untitled plan"></div>
+  <div class="grp">
+    <select id="projects" aria-label="Projects"></select>
+    <button id="new" class="primary">New project</button>
+    <button id="dup">Duplicate</button>
+    <button id="del">Delete</button>
+  </div>
+  <div class="grp">
+    <button id="exp">Export</button><button id="expall">Backup all</button><button id="imp">Import</button>
+    <input type="file" id="file" accept=".json,application/json" multiple hidden>
+    <span id="ss" class="ss" role="status"></span>
+  </div>
+  <div class="grp">
+    <label class="grp"><input type="checkbox" id="crit" checked> Critical path</label>
+    <button id="bl">Set baseline</button><button id="blx">Clear baseline</button><button id="zo" aria-label="Zoom out">−</button><button id="zi" aria-label="Zoom in">+</button>
+  </div>
+  <div id="sum"></div>
+</div>
+<div id="warn"></div>
+<div id="conflict" hidden><span>This project was changed on another device, so your latest edits weren’t saved.</span><button id="creload">Reload latest</button><button id="ckeep">Overwrite with my version</button></div>
+<div id="wrap"><div id="inner">
+  <div id="left">
+    <div class="hd"><span>#</span><span>Task name</span><span>Start</span><span>Days</span><span>% done</span><span>Depends on</span><span>Assignee</span><span>Status</span><span>Finish</span><span>Float</span><span></span></div>
+    <div id="rows"></div>
+    <button id="add">+ Add task</button>
+  </div>
+  <div id="right"><svg id="gh"></svg><svg id="gb"></svg></div>
+</div></div>
+<div id="foot"><span id="cp"></span><span>Durations are calendar days. Dependencies are finish-to-start task numbers. Summary tasks roll up from their subtasks. Drag a bar to move it, drag its right edge to resize. The thin grey bar under a task is its baseline.</span></div>
+<aside id="cm" hidden><header><b id="cmt"></b><button id="cmx">Close</button></header><div id="cml"></div><textarea id="cmi" rows="3" placeholder="Add a comment (Ctrl+Enter to post)"></textarea><button id="cma" class="primary">Add comment</button></aside>
+<div id="gate" hidden><form id="gform"><h2>Planline</h2><p id="gmsg"></p><label>Access key<input id="gkey" type="password" autocomplete="current-password" required></label><button class="primary">Continue</button></form></div>
+<div id="toast" role="status"></div>
+<script>
+const DAY=864e5, RH=32;
+const $=s=>document.querySelector(s);
+const D=s=>{const[y,m,d]=s.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/DAY)};
+const S=n=>new Date(n*DAY).toISOString().slice(0,10);
+const F=(n,y)=>new Date(n*DAY).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC',...(y?{year:'numeric'}:{})});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const now=new Date(), todayN=Math.round(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())/DAY);
+const monday=todayN-((new Date(todayN*DAY).getUTCDay()+6)%7);
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+let tasks=[],uid=1,curName='Untitled plan',dayW=24,showCrit=true,view={minD:0,maxD:0},drag=null,saveT;
+const ZOOMS=[8,12,16,24,32,44];
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)}
+const mk=(n,s,d,p,a)=>({uid:uid++,name:n,start:s,dur:d,deps:p||[],who:a||'',lvl:0,pct:0,col:false,base:null,cm:[]});
+const endOf=i=>{let j=i+1;while(j<tasks.length&&tasks[j].lvl>tasks[i].lvl)j++;return j};
+
+function sample(){
+  uid=1;const b=monday-14;
+  const rows=[['Project kickoff',0,b,0,[],'PM',100],['Planning',0,b,0,[],'',0],['Requirements',1,b,5,[1],'Analyst',100],['Architecture',1,b,4,[3],'Eng lead',100],
+    ['Build',0,b,0,[],'',0],['UX design',1,b,8,[3],'Design',60],['Backend build',1,b,14,[4],'Backend',40],['Frontend build',1,b,12,[6,4],'Frontend',20],
+    ['Content writing',1,b+9,6,[3],'Marketing',0],['Release',0,b,0,[],'',0],['Integration testing',1,b,7,[7,8],'QA',0],['Documentation',1,b,5,[9,7],'Writer',0],['Launch',1,b,0,[11,12],'PM',0]];
+  tasks=rows.map(r=>{const t=mk(r[0],r[2],r[3],[],r[5]);t.lvl=r[1];t.pct=r[6];return t});
+  rows.forEach((r,i)=>r[4].forEach(k=>tasks[i].deps.push(tasks[k-1].uid)));
+  compute();tasks.forEach(t=>{if(!t.sum)t.base=[t.es,t.ef]});
+  tasks[6].dur=17;
+  tasks[6].cm.push({t:Date.now()-864e5,x:'Vendor API arrived 3 days late, so the estimate went up.'});
+  curName='Product launch (sample)';
+}
+const serialize=()=>({tasks:tasks.map(t=>({n:t.name,s:S(t.start),d:t.dur,p:t.deps.map(u=>tasks.findIndex(x=>x.uid===u)+1),a:t.who,l:t.lvl,c:t.pct,k:t.col?1:0,b:t.base,m:t.cm}))});
+function hydrate(o){
+  uid=1;const src=o.tasks||[];
+  tasks=src.map(t=>{const x=mk(t.n,D(t.s),t.d,[],t.a);x.lvl=t.l||0;x.pct=t.c||0;x.col=!!t.k;x.base=t.b||null;x.cm=t.m||[];return x});
+  tasks.forEach((t,i)=>{t.lvl=Math.min(t.lvl,i?tasks[i-1].lvl+1:0)});
+  src.forEach((t,i)=>(t.p||[]).forEach(k=>{if(tasks[k-1]&&k-1!==i)tasks[i].deps.push(tasks[k-1].uid)}));
+}
+
+/* ---- scheduling + critical path (CPM). Summary tasks roll up from their subtasks. ---- */
+function compute(){
+  const n=tasks.length,idx=new Map(tasks.map((t,i)=>[t.uid,i]));
+  const sum=tasks.map((t,i)=>i+1<n&&tasks[i+1].lvl>t.lvl);
+  const leaves=i=>{const o=[],e=endOf(i);for(let j=i+1;j<e;j++)if(!sum[j])o.push(j);return o};
+  const preds=tasks.map((t,i)=>{const s=new Set();
+    if(!sum[i])t.deps.forEach(u=>{const j=idx.get(u);if(j===undefined)return;if(sum[j])leaves(j).forEach(k=>s.add(k));else s.add(j)});
+    s.delete(i);return[...s]});
+  const succ=tasks.map(()=>[]);preds.forEach((p,i)=>p.forEach(j=>succ[j].push(i)));
+  const indeg=preds.map(p=>p.length),q=[],order=[];
+  tasks.forEach((t,i)=>{if(!sum[i]&&!indeg[i])q.push(i)});
+  while(q.length){const i=q.shift();order.push(i);succ[i].forEach(j=>{if(--indeg[j]===0)q.push(j)})}
+  const ok=new Set(order);
+  tasks.forEach((t,i)=>{t.sum=sum[i];t.cyc=!sum[i]&&!ok.has(i);t.es=t.start;t.ef=t.start+t.dur;t.slack=null;t.crit=false;t.pr=t.pct;t.bs=t.base});
+  order.forEach(i=>{const t=tasks[i];let es=t.start;preds[i].forEach(j=>es=Math.max(es,tasks[j].ef));t.es=es;t.ef=es+t.dur});
+  const end=order.length?Math.max(...order.map(i=>tasks[i].ef)):0,ls=[];
+  for(let k=order.length-1;k>=0;k--){
+    const i=order[k],t=tasks[i],lf=succ[i].length?Math.min(...succ[i].map(j=>ls[j])):end;
+    ls[i]=lf-t.dur;t.slack=ls[i]-t.es;t.crit=t.slack===0;
+  }
+  tasks.forEach((t,i)=>{if(!sum[i])return;const L=leaves(i).map(k=>tasks[k]),w=x=>Math.max(x.dur,1);
+    t.es=Math.min(...L.map(x=>x.es));t.ef=Math.max(...L.map(x=>x.ef));
+    t.pr=Math.round(L.reduce((a,x)=>a+x.pct*w(x),0)/L.reduce((a,x)=>a+w(x),0));
+    t.bs=L.every(x=>x.base)?[Math.min(...L.map(x=>x.base[0])),Math.max(...L.map(x=>x.base[1]))]:null});
+  let hide=-1,pos=0;
+  tasks.forEach((t,i)=>{if(hide>=0&&t.lvl>hide){t.vis=false;return}hide=-1;t.vis=true;t.pos=pos++;if(sum[i]&&t.col)hide=t.lvl});
+  const lf=tasks.filter(t=>!t.sum),W=x=>Math.max(x.dur,1),tw=lf.reduce((a,x)=>a+W(x),0)||1;
+  const bl=lf.filter(t=>t.base);
+  return{preds,end,nvis:pos,nleaf:lf.length,pctAll:Math.round(lf.reduce((a,x)=>a+x.pct*W(x),0)/tw),
+    slip:bl.length&&order.length?end-Math.max(...bl.map(t=>t.base[1])):null,
+    crit:order.filter(i=>tasks[i].crit).sort((a,b)=>tasks[a].es-tasks[b].es||a-b),
+    cyc:tasks.map((t,i)=>t.cyc?i+1:0).filter(Boolean),start:order.length?Math.min(...order.map(i=>tasks[i].es)):0};
+}
+function status(t){
+  if(t.pr>=100)return['Complete','done'];
+  if((t.ef>t.es?t.ef-1:t.es)<todayN)return['Overdue','late'];
+  if(t.pr>0)return['In progress','prog'];
+  if(t.es<todayN)return['Late start','late'];
+  return['Not started',''];
+}
+
+/* ---- table ---- */
+const depText=t=>t.deps.map(u=>tasks.findIndex(x=>x.uid===u)+1).join(', ');
+function buildRows(){
+  $('#rows').innerHTML=tasks.map((t,i)=>`<div class="row" data-i="${i}"><span class="num">${i+1}</span><span class="nm" style="padding-left:${t.lvl*14}px"><button class="tg" data-act="tog" aria-label="Collapse or expand"></button><input data-f="n" value="${esc(t.name)}" aria-label="Task name"></span><input data-f="s" type="date" aria-label="Start date"><input data-f="d" type="number" min="0" max="999" aria-label="Duration in days"><input data-f="c" type="number" min="0" max="100" aria-label="Percent complete"><input data-f="p" aria-label="Dependencies" placeholder="e.g. 1, 3"><input data-f="a" value="${esc(t.who)}" aria-label="Assignee"><span class="ro st"></span><span class="ro fin"></span><span class="ro fl"></span><span class="acts"><button data-act="out" title="Outdent: move up one level">←</button><button data-act="in" title="Indent: make a subtask of the task above">→</button><button data-act="sub" title="Add subtask">+</button><button data-act="del" title="Delete task and its subtasks">×</button><button data-act="cm" title="Comments">💬</button></span></div>`).join('');
+  refresh(true);
+}
+function refresh(force){
+  const r=compute(),act=document.activeElement;
+  document.querySelectorAll('#rows .row').forEach((row,i)=>{
+    const t=tasks[i];if(!t)return;
+    const set=(f,v)=>{const el=row.querySelector(`[data-f=${f}]`);if(el!==act||force===el)el.value=v;el.disabled=t.sum&&f!=='n'&&f!=='a';return el};
+    set('s',S(t.es)).classList.toggle('auto',!t.sum&&t.es>t.start);
+    set('d',t.ef-t.es);set('c',t.pr);set('p',t.sum?'':depText(t));
+    const[sl,sk]=status(t),st=row.querySelector('.st');st.textContent=sl;st.className='ro st '+sk;
+    const fin=row.querySelector('.fin'),fe=t.ef>t.es?t.ef-1:t.es;
+    fin.textContent=F(fe);
+    fin.title=t.bs?`Baseline finish ${F(t.bs[1]>t.bs[0]?t.bs[1]-1:t.bs[0],1)}; variance ${t.ef-t.bs[1]>0?'+':''}${t.ef-t.bs[1]} days`:'';
+    row.querySelector('.fl').textContent=t.sum?'':t.cyc?'n/a':t.slack+'d';
+    const tg=row.querySelector('.tg');tg.textContent=t.sum?(t.col?'▸':'▾'):'';
+    row.style.display=t.vis?'':'none';
+    row.classList.toggle('crit',t.crit&&showCrit);row.classList.toggle('cyc',t.cyc);row.classList.toggle('sum',t.sum);
+    row.querySelector('[data-act=cm]').textContent='💬'+(t.cm.length||'');
+  });
+  const w=$('#warn');w.style.display=r.cyc.length?'block':'none';
+  if(r.cyc.length)w.textContent='Circular dependency involving task'+(r.cyc.length>1?'s ':' ')+r.cyc.join(', ')+'. These tasks are not scheduled from their dependencies until the loop is removed.';
+  const nc=r.crit.length,sp=r.slip;
+  $('#sum').innerHTML=tasks.length?`<span>Start <b>${F(r.start,1)}</b></span><span>Finish <b>${F(Math.max(r.end-1,r.start),1)}</b></span><span>Done <b>${r.pctAll}%</b></span><span>Critical <b>${nc} of ${r.nleaf}</b></span>`+(sp===null?'':`<span>Vs baseline <b style="color:${sp>0?'var(--crit)':'inherit'}">${sp>0?'+':''}${sp} days</b></span>`):'';
+  $('#cp').innerHTML=nc?`<span>Critical path: <b>${r.crit.map(i=>i+1).join(' → ')}</b></span>`:'<span>Critical path: none yet</span>';
+  if(cmUid&&cmTask())$('#cmt').textContent=cmTask().name;
+  gantt(r);
+  clearTimeout(saveT);saveT=setTimeout(saveCurrent,800);
+}
+
+/* ---- gantt ---- */
+function gantt(r){
+  const n=tasks.length;
+  let minD=n?Math.min(...tasks.map(t=>t.es)):todayN,maxD=n?Math.max(...tasks.map(t=>t.ef+(t.slack>0?t.slack:0))):todayN+30;
+  minD-=3;maxD+=12;if(maxD-minD<30)maxD=minD+30;
+  if(drag){minD=view.minD;maxD=Math.max(maxD,view.maxD)}
+  view={minD,maxD};
+  const nv=r.nvis,W=(maxD-minD)*dayW,H=Math.max(nv,1)*RH+RH,X=d=>(d-minD)*dayW;
+  let h='',b='';
+  for(let d=minD;d<maxD;){
+    const dt=new Date(d*DAY),nx=Math.round(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+1,1)/DAY),e=Math.min(nx,maxD);
+    h+=`<rect class="mo" x="${X(d)}" y="0" width="${(e-d)*dayW}" height="22"/>`;
+    if((e-d)*dayW>50)h+=`<text class="mot" x="${X(d)+6}" y="15">${dt.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'})}</text>`;
+    d=e;
+  }
+  for(let d=minD;d<maxD;d++){
+    const dow=new Date(d*DAY).getUTCDay(),x=X(d);
+    if(dow===0||dow===6){h+=`<rect class="we" x="${x}" y="22" width="${dayW}" height="22"/>`;b+=`<rect class="we" x="${x}" y="0" width="${dayW}" height="${H}"/>`}
+    if(dow===1){b+=`<line class="gl" x1="${x}" x2="${x}" y1="0" y2="${H}"/>`;h+=`<line class="gl" x1="${x}" x2="${x}" y1="22" y2="44"/>`}
+    if(dayW>=18||dow===1)h+=`<text class="dt" x="${x+dayW/2}" y="38">${new Date(d*DAY).getUTCDate()}</text>`;
+  }
+  h+=`<line class="gl" x1="0" x2="${W}" y1="43.5" y2="43.5"/>`;
+  for(let i=1;i<=nv+1;i++)b+=`<line class="gl" x1="0" x2="${W}" y1="${i*RH-.5}" y2="${i*RH-.5}"/>`;
+  if(todayN>=minD&&todayN<maxD)b+=`<line class="today" x1="${X(todayN)+dayW/2}" x2="${X(todayN)+dayW/2}" y1="0" y2="${H}"/>`;
+  tasks.forEach((t,i)=>{
+    if(!t.vis)return;
+    const c=t.crit&&showCrit,x=X(t.es),w=(t.ef-t.es)*dayW,y=t.pos*RH,cl=c?' crit':'',ms=!t.sum&&t.dur===0;
+    const tip=`<title>${esc(t.name)}\n${F(t.es,1)} to ${F(t.ef>t.es?t.ef-1:t.es,1)}\n${t.pr}% complete (${status(t)[0]})${t.sum?'':'\nFloat: '+(t.cyc?'n/a':t.slack+' days')}</title>`;
+    let lx=x+w+8;
+    if(t.bs)b+=`<rect class="base" x="${X(t.bs[0])}" y="${y+26}" width="${Math.max((t.bs[1]-t.bs[0])*dayW,3)}" height="3" rx="1.5"/>`;
+    if(t.slack>0){b+=`<rect class="flt" x="${x+w}" y="${y+13}" width="${t.slack*dayW}" height="6" rx="3"/>`;lx+=t.slack*dayW}
+    if(t.sum)b+=`<polygon class="sumbar" points="${x},${y+8} ${x+w},${y+8} ${x+w},${y+22} ${x+w-6},${y+16} ${x+6},${y+16} ${x},${y+22}">${tip}</polygon>`;
+    else if(ms){const cy=y+RH/2;b+=`<polygon class="bar${cl}" data-i="${i}" points="${x},${cy-9} ${x+9},${cy} ${x},${cy+9} ${x-9},${cy}">${tip}</polygon>`;lx+=4}
+    else b+=`<rect class="bar${cl}" data-i="${i}" x="${x}" y="${y+7}" width="${w}" height="18" rx="3">${tip}</rect><rect class="prog" x="${x}" y="${y+7}" width="${w*t.pr/100}" height="18" rx="3"/><rect class="grip" data-i="${i}" data-g="1" x="${x+w-6}" y="${y+7}" width="6" height="18"/>`;
+    b+=`<text class="lbl" x="${lx}" y="${y+RH/2+4}">${esc(t.name)}${t.pr?' ('+t.pr+'%)':''}</text>`;
+  });
+  let a='';
+  tasks.forEach((t,i)=>r.preds[i].forEach(j=>{
+    const p=tasks[j];if(!t.vis||!p.vis)return;
+    const x1=X(p.ef),y1=p.pos*RH+RH/2,x2=X(t.es),y2=t.pos*RH+RH/2;
+    const c=showCrit&&p.crit&&t.crit&&t.es===p.ef?' crit':'';
+    const ym=y2>y1?y1+RH/2:y1-RH/2;
+    const d=x2>=x1+12?`M${x1},${y1}H${x1+6}V${y2}H${x2-1}`:`M${x1},${y1}H${x1+6}V${ym}H${x2-8}V${y2}H${x2-1}`;
+    a+=`<path class="arw${c}" d="${d}" marker-end="url(#ah${c?'c':''})"/>`;
+  }));
+  const defs='<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path class="ah" d="M0,0L7,3.5L0,7z"/></marker><marker id="ahc" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path class="ah crit" d="M0,0L7,3.5L0,7z"/></marker></defs>';
+  const gh=$('#gh'),gb=$('#gb');
+  gh.setAttribute('width',W);gh.setAttribute('height',44);gh.innerHTML=h;
+  gb.setAttribute('width',W);gb.setAttribute('height',H);gb.innerHTML=defs+b+a;
+}
+$('#gb').addEventListener('pointerdown',e=>{
+  const el=e.target.closest('[data-i]');if(!el)return;e.preventDefault();
+  const t=tasks[+el.dataset.i];drag={i:+el.dataset.i,g:!!el.dataset.g,x:e.clientX,es:t.es,dur:t.dur};
+});
+addEventListener('pointermove',e=>{
+  if(!drag)return;const dd=Math.round((e.clientX-drag.x)/dayW),t=tasks[drag.i];
+  if(drag.g)t.dur=Math.max(1,drag.dur+dd);else t.start=Math.max(drag.es+dd,view.minD);
+  refresh();
+});
+addEventListener('pointerup',()=>{drag=null;refresh()});
+
+/* ---- editing ---- */
+$('#rows').addEventListener('input',e=>{
+  const f=e.target.dataset.f,i=+e.target.closest('.row').dataset.i;
+  if(f==='n'){tasks[i].name=e.target.value;refresh()}else if(f==='a'){tasks[i].who=e.target.value;refresh()}
+});
+$('#rows').addEventListener('change',e=>{
+  const el=e.target,f=el.dataset.f;if(!f||f==='n'||f==='a')return;
+  const i=+el.closest('.row').dataset.i,t=tasks[i],v=el.value;
+  if(f==='s'&&v)t.start=D(v);
+  if(f==='d')t.dur=Math.max(0,Math.min(999,parseInt(v)||0));
+  if(f==='c')t.pct=Math.max(0,Math.min(100,parseInt(v)||0));
+  if(f==='p'){
+    const out=[];let bad=false;
+    v.split(/[,;\s]+/).filter(Boolean).forEach(k=>{const j=+k-1;
+      if(Number.isInteger(j)&&j>=0&&j<tasks.length&&j!==i){const u=tasks[j].uid;if(!out.includes(u))out.push(u)}else bad=true});
+    t.deps=out;if(bad)toast('Some entries weren’t valid task numbers and were removed.');
+  }
+  refresh(el);
+});
+const shift=(i,d)=>{const e=endOf(i);for(let j=i;j<e;j++)tasks[j].lvl+=d};
+$('#rows').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const i=+b.closest('.row').dataset.i,t=tasks[i],a=b.dataset.act;
+  if(a==='cm')return openCm(t.uid);
+  if(a==='tog'){t.col=!t.col;return refresh()}
+  if(a==='del'){
+    const gone=tasks.splice(i,endOf(i)-i),us=new Set(gone.map(x=>x.uid));
+    tasks.forEach(x=>x.deps=x.deps.filter(u=>!us.has(u)));
+    if(us.has(cmUid))closeCm();
+    if(gone.length>1)toast('Deleted the task and its '+(gone.length-1)+' subtask'+(gone.length>2?'s':'')+'.');
+  }else if(a==='sub'){
+    compute();const was=!t.sum;
+    tasks.splice(endOf(i),0,Object.assign(mk('New subtask',t.es,1,[],t.who),{lvl:t.lvl+1}));t.col=false;
+    if(was)toast('“'+t.name+'” is now a summary task. Its dates and progress roll up from its subtasks.');
+  }else if(a==='in'){
+    if(i===0||t.lvl>tasks[i-1].lvl)return toast('A task can only be indented under the task directly above it.');
+    shift(i,1);
+  }else if(a==='out'){
+    if(!t.lvl)return toast('That task is already at the top level.');
+    shift(i,-1);
+  }
+  buildRows();
+});
+$('#add').onclick=()=>{
+  compute();const l=tasks[tasks.length-1];
+  tasks.push(mk('New task',l?l.es:monday,1,[],''));buildRows();
+  const r=document.querySelectorAll('#rows .row'),inp=r[r.length-1].querySelector('[data-f=n]');inp.focus();inp.select();
+};
+$('#crit').onchange=e=>{showCrit=e.target.checked;refresh()};
+$('#zi').onclick=()=>{const k=ZOOMS.indexOf(dayW);dayW=ZOOMS[Math.min(k+1,ZOOMS.length-1)];refresh()};
+$('#zo').onclick=()=>{const k=ZOOMS.indexOf(dayW);dayW=ZOOMS[Math.max(k-1,0)];refresh()};
+$('#pname').oninput=e=>{curName=e.target.value;clearTimeout(saveT);saveT=setTimeout(()=>{saveCurrent();listProjects()},500)};
+$('#bl').onclick=()=>{compute();tasks.forEach(t=>{if(!t.sum)t.base=[t.es,t.ef]});refresh();toast('Baseline saved from the current schedule.')};
+$('#blx').onclick=()=>{tasks.forEach(t=>t.base=null);refresh();toast('Baseline cleared.')};
+
+/* ---- comments ---- */
+let cmUid=0;
+const cmTask=()=>tasks.find(t=>t.uid===cmUid);
+function renderCm(){
+  const t=cmTask();if(!t)return closeCm();
+  $('#cmt').textContent=t.name;
+  $('#cml').innerHTML=t.cm.length?t.cm.map((c,k)=>`<div class="c"><div class="cd"><span>${new Date(c.t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span><button data-k="${k}" title="Delete comment">×</button></div><p>${esc(c.x)}</p></div>`).join(''):'<p class="none">No comments yet. Add context, decisions or blockers for this task.</p>';
+}
+function openCm(u){cmUid=u;$('#cm').hidden=false;renderCm();$('#cmi').focus()}
+function closeCm(){cmUid=0;$('#cm').hidden=true}
+$('#cmx').onclick=closeCm;
+$('#cma').onclick=()=>{const t=cmTask(),v=$('#cmi').value.trim();if(!t||!v)return;t.cm.push({t:Date.now(),x:v});$('#cmi').value='';renderCm();refresh()};
+$('#cmi').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))$('#cma').click()});
+$('#cml').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;cmTask().cm.splice(+b.dataset.k,1);renderCm();refresh()});
+
+/* ---- projects: stored on the server (Netlify Function + Netlify Blobs) ---- */
+let index=[],curId='',curRev=0,lastSnap='',saving=false,again=false,conflict=false,accessKey=LS.get('planline.key')||'';
+const snap=()=>JSON.stringify({n:curName,t:serialize().tasks});
+const hhmm=t=>new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+const setStatus=t=>{$('#ss').textContent=t};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const byRecent=()=>[...index].sort((a,b)=>b.updated-a.updated);
+const guard=fn=>async(...a)=>{try{await fn(...a)}catch(err){toast(err.message==='offline'?'You appear to be offline.':err.message)}};
+
+function askKey(msg){
+  return new Promise(res=>{
+    $('#gate').hidden=false;$('#gmsg').textContent=msg;$('#gkey').value='';$('#gkey').focus();
+    $('#gform').onsubmit=e=>{e.preventDefault();accessKey=$('#gkey').value.trim();LS.set('planline.key',accessKey);$('#gate').hidden=true;res()};
+  });
+}
+async function api(path,opt={}){
+  for(;;){
+    let r;
+    try{r=await fetch('/api/projects'+path,{...opt,headers:{'content-type':'application/json','x-planline-key':accessKey}})}
+    catch(e){throw new Error('offline')}
+    if(r.status===401){await askKey(accessKey?'That key wasn’t accepted. Try again.':'Enter the access key for this workspace.');continue}
+    const body=await r.json().catch(()=>({}));
+    if(!r.ok){const err=new Error(body.error||'Request failed');err.status=r.status;throw err}
+    return body;
+  }
+}
+function listProjects(){
+  $('#projects').innerHTML=[...index].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${p.id}"${p.id===curId?' selected':''}>${esc(p.name)}</option>`).join('');
+}
+async function saveCurrent(){
+  if(!curId||conflict)return;
+  if(saving){again=true;return}
+  const s=snap();if(s===lastSnap)return;
+  saving=true;setStatus('Saving…');
+  try{
+    const p=await api('/'+curId,{method:'PUT',body:JSON.stringify({name:curName,tasks:serialize().tasks,rev:curRev})});
+    curRev=p.rev;lastSnap=s;
+    const e=index.find(x=>x.id===curId);if(e){e.name=p.name;e.updated=p.updated;e.rev=p.rev}
+    listProjects();setStatus('Saved '+hhmm(p.updated));
+  }catch(err){
+    if(err.status===409){conflict=true;$('#conflict').hidden=false;setStatus('Not saved')}
+    else{setStatus('Not saved ('+(err.message==='offline'?'offline':err.message)+'). Retrying…');clearTimeout(saveT);saveT=setTimeout(saveCurrent,5000)}
+  }
+  saving=false;if(again){again=false;saveCurrent()}
+}
+async function flush(){clearTimeout(saveT);while(saving)await sleep(50);await saveCurrent();while(saving)await sleep(50)}
+async function createProject(name,tasks){
+  const p=await api('',{method:'POST',body:JSON.stringify({name,tasks})});
+  index.push({id:p.id,name:p.name,updated:p.updated,rev:p.rev});return p.id;
+}
+async function addSample(){sample();return createProject(curName,serialize().tasks)}
+async function openProject(id){
+  await flush();
+  try{
+    const p=await api('/'+id);
+    conflict=false;$('#conflict').hidden=true;
+    closeCm();hydrate(p);curId=id;curRev=p.rev;curName=p.name;$('#pname').value=curName;lastSnap=snap();
+    LS.set('planline.current',id);listProjects();buildRows();setStatus('Loaded');
+  }catch(err){toast(err.status===404?'That project no longer exists.':'Couldn’t load the project: '+err.message)}
+}
+$('#projects').onchange=guard(e=>openProject(e.target.value));
+$('#pname').onchange=e=>{if(!e.target.value.trim())e.target.value=curName='Untitled project';saveCurrent()};
+$('#new').onclick=guard(async()=>{
+  await flush();
+  await openProject(await createProject('Untitled project',[{n:'New task',s:S(monday),d:1,p:[],a:'',l:0,c:0,k:0,b:null,m:[]}]));
+  $('#pname').focus();$('#pname').select();
+});
+$('#dup').onclick=guard(async()=>{await flush();await openProject(await createProject(curName+' (copy)',serialize().tasks));toast('Duplicated. You’re now in the copy.')});
+let armed=false;
+$('#del').onclick=guard(async()=>{
+  const b=$('#del');
+  if(!armed){armed=true;b.textContent='Confirm';setTimeout(()=>{armed=false;b.textContent='Delete'},3000);return}
+  armed=false;b.textContent='Delete';
+  const gone=curName,id=curId;clearTimeout(saveT);
+  await api('/'+id,{method:'DELETE'});
+  index=index.filter(p=>p.id!==id);curId='';
+  const next=byRecent()[0];await openProject(next?next.id:await addSample());toast('Deleted “'+gone+'”.');
+});
+$('#creload').onclick=guard(async()=>{conflict=false;lastSnap=snap();await openProject(curId)});
+$('#ckeep').onclick=guard(async()=>{const p=await api('/'+curId);curRev=p.rev;conflict=false;$('#conflict').hidden=true;lastSnap='';await saveCurrent()});
+function download(name,obj){
+  const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'project';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));
+  a.download=slug+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('#exp').onclick=guard(async()=>{await flush();download(curName+'-planline',{planline:1,name:curName,...serialize()})});
+$('#expall').onclick=guard(async()=>{
+  await flush();const all=await Promise.all(index.map(p=>api('/'+p.id)));
+  download('planline-backup',{planline:1,projects:all.map(p=>({name:p.name,tasks:p.tasks}))});
+});
+$('#imp').onclick=()=>$('#file').click();
+$('#file').onchange=guard(async e=>{
+  let last='',n=0;
+  for(const f of e.target.files){
+    try{
+      const o=JSON.parse(await f.text());
+      for(const p of (o.projects||[o]))
+        if(Array.isArray(p.tasks)&&p.tasks.every(t=>/^\d{4}-\d\d-\d\d$/.test(t.s))){last=await createProject(String(p.name||f.name.replace(/\.json$/,'')).slice(0,200),p.tasks);n++}
+    }catch(err){if(err.message==='offline')throw err}
+  }
+  e.target.value='';
+  if(n){await openProject(last);toast('Imported '+n+' project'+(n>1?'s':'')+'.')}else toast('No valid Planline project found in that file.');
+});
+addEventListener('beforeunload',e=>{if(curId&&snap()!==lastSnap){e.preventDefault();e.returnValue=''}});
+
+/* ---- start ---- */
+(async()=>{
+  setStatus('Loading…');
+  try{
+    if(!accessKey)await askKey('Enter the access key for this workspace.');
+    index=await api('');
+  }catch(err){
+    setStatus('Couldn’t load projects');
+    const w=$('#warn');w.style.display='block';w.textContent=err.message==='offline'?'Couldn’t reach the server. Check your connection and reload.':err.message;
+    return;
+  }
+  const cur=LS.get('planline.current'),first=index.find(p=>p.id===cur)||byRecent()[0];
+  await openProject(first?first.id:await addSample());
+})();
+</script>
+
+
+</body>
+</html>

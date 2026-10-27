@@ -120,6 +120,29 @@ svg text{font-family:inherit}
 .card li{display:flex;justify-content:space-between;gap:8px;white-space:nowrap;line-height:1.6}
 .card li span:first-child{overflow:hidden;text-overflow:ellipsis}.card li span:last-child{color:var(--muted);flex:none}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.ic{width:15px;height:15px;margin-right:6px;flex:none;vertical-align:-3px}.ic:only-child{margin:0}
+button{display:inline-flex;align-items:center;justify-content:center}
+.acts button{width:22px;height:22px}.acts .ic{width:14px;height:14px}.acts [data-act=cm]{width:36px;gap:2px}.acts small{font-size:10px}.acts{align-items:center}
+.row{height:auto;min-height:32px;align-items:stretch}
+.row input{height:auto;min-height:31px}
+.row .num,.row .ro{display:flex;align-items:center}.row .num{justify-content:center}
+.nm{height:auto;align-items:stretch}.tg{align-self:center}
+.nm textarea{display:block;flex:1;min-width:0;height:31px;resize:none;overflow:hidden;border:0;background:transparent;font:inherit;line-height:1.35;padding:7px 6px}
+.row.sum .nm textarea{font-weight:600}
+.mwrap{position:relative;display:inline-block}
+#expmenu{position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);padding:4px;z-index:25}
+#expmenu[hidden],#pres[hidden]{display:none}
+#expmenu button{display:flex;width:100%;justify-content:flex-start;border:0;background:transparent;padding:7px 10px;border-radius:5px;text-align:left}
+#expmenu button:hover{background:var(--bg)}
+#pres{position:fixed;inset:0;z-index:40;background:#0b0f14;overflow:hidden}
+#slide{position:absolute;left:50%;top:50%;width:1280px;height:720px;background:var(--bg);color:var(--ink);padding:26px 32px 18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 10px 50px rgba(0,0,0,.5);overflow:hidden}
+#slide .sh{display:flex;justify-content:space-between;align-items:flex-start}#slide h1{margin:0;font-size:34px;line-height:1.1}
+#slide .pill{font-size:15px;padding:3px 16px}
+#slide .sk{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}#slide .card{background:var(--panel);font-size:13px}#slide .big{font-size:26px}
+#slide .sg{flex:1;min-height:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px}
+#slide .sf{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+.pbar{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:2;opacity:0;transition:opacity .2s}#pres:hover .pbar,.pbar:focus-within{opacity:1}
+.pbar button{background:rgba(255,255,255,.14);color:#fff;border-color:transparent;padding:7px 9px}
 </style>
 </head>
 <body>
@@ -127,18 +150,23 @@ svg text{font-family:inherit}
   <div class="grp"><input id="pname" aria-label="Plan name" value="Untitled plan"></div>
   <div class="grp">
     <select id="projects" aria-label="Projects"></select>
-    <button id="new" class="primary">New project</button>
-    <button id="dup">Duplicate</button>
-    <button id="del">Delete</button>
+    <button id="new" class="primary" data-ic="plus">New project</button>
+    <button id="dup" data-ic="copy">Duplicate</button>
+    <button id="del" data-ic="trash">Delete</button>
   </div>
   <div class="grp">
-    <button id="exp">Export</button><button id="expall">Backup all</button><button id="imp">Import</button>
+    <span class="mwrap"><button id="exp" data-ic="download" aria-haspopup="menu" aria-expanded="false">Export</button><div id="expmenu" role="menu" hidden>
+<button role="menuitem" data-fmt="xlsx" data-ic="sheet">Excel workbook (.xlsx)</button>
+<button role="menuitem" data-fmt="xls" data-ic="sheet">Excel 97-2003 (.xls)</button>
+<button role="menuitem" data-fmt="pdf" data-ic="doc">PDF document (.pdf)</button>
+<button role="menuitem" data-fmt="jpeg" data-ic="image">Image (.jpeg)</button>
+<button role="menuitem" data-fmt="json" data-ic="braces">Project file (.json)</button></div></span><button id="expall" data-ic="archive">Backup all</button><button id="imp" data-ic="upload">Import</button>
     <input type="file" id="file" accept=".json,application/json" multiple hidden>
     <span id="ss" class="ss" role="status"></span>
   </div>
   <div class="grp">
     <label class="grp"><input type="checkbox" id="crit" checked> Critical path</label>
-    <button id="bl">Set baseline</button><button id="blx">Clear baseline</button><button id="zo" aria-label="Zoom out">−</button><button id="zi" aria-label="Zoom in">+</button><button id="theme">◐ Auto</button>
+    <button id="bl" data-ic="flag">Set baseline</button><button id="blx" data-ic="flagx">Clear baseline</button><button id="zo" data-ic="zoomout" aria-label="Zoom out" title="Zoom out"></button><button id="zi" data-ic="zoomin" aria-label="Zoom in" title="Zoom in"></button><button id="theme" data-ic="half">Auto</button><button id="presbtn" data-ic="present" aria-pressed="false">Presentation</button>
   </div>
   <div id="sum"></div>
 </div>
@@ -148,15 +176,16 @@ svg text{font-family:inherit}
   <div id="left">
     <div class="hd"><span>#</span><span>Task name</span><span>Start</span><span>Days</span><span>% done</span><span>Depends on</span><span>Assignee</span><span>Status</span><span>Finish</span><span>Float</span><span></span></div>
     <div id="rows"></div>
-    <button id="add">+ Add task</button>
+    <button id="add" data-ic="plus">Add task</button>
     <div id="split" role="separator" aria-orientation="vertical" aria-label="Resize task list. Use arrow keys or drag." tabindex="0"></div>
   </div>
   <div id="right"><svg id="gh"></svg><svg id="gb"></svg></div>
 </div></div>
 <section id="dash" aria-label="Project dashboard"><div class="dh"><b>Project dashboard</b><span id="dhealth"></span><button id="dtog">Hide</button></div><div id="dgrid"></div></section>
 <div id="foot"><span id="cp"></span><span>Durations are calendar days. Dependencies are finish-to-start task numbers. Summary tasks roll up from their subtasks. Drag a bar to move it, drag its right edge to resize. The thin grey bar under a task is its baseline. Drag the divider between the table and chart to resize (double-click resets).</span></div>
-<aside id="cm" hidden><header><b id="cmt"></b><button id="cmx">Close</button></header><div id="cml"></div><textarea id="cmi" rows="3" placeholder="Add a comment (Ctrl+Enter to post)"></textarea><button id="cma" class="primary">Add comment</button></aside>
+<aside id="cm" hidden><header><b id="cmt"></b><button id="cmx" data-ic="x">Close</button></header><div id="cml"></div><textarea id="cmi" rows="3" placeholder="Add a comment (Ctrl+Enter to post)"></textarea><button id="cma" class="primary" data-ic="plus">Add comment</button></aside>
 <div id="gate" hidden><form id="gform"><h2>Planline</h2><p id="gmsg"></p><label>Access key<input id="gkey" type="password" autocomplete="current-password" required></label><button class="primary">Continue</button></form></div>
+<div id="pres" hidden role="dialog" aria-label="Presentation mode"><div class="pbar"><button id="pfs" data-ic="expand" title="Full screen (F)" aria-label="Full screen"></button><button id="pexit" data-ic="x" title="Exit (Esc)" aria-label="Exit presentation"></button></div><div id="slide"></div></div>
 <div id="toast" role="status"></div>
 <script>
 const DAY=864e5, RH=32;
@@ -240,8 +269,8 @@ function status(t){
 /* ---- table ---- */
 const depText=t=>t.deps.map(u=>tasks.findIndex(x=>x.uid===u)+1).join(', ');
 function buildRows(){
-  $('#rows').innerHTML=tasks.map((t,i)=>`<div class="row" data-i="${i}"><span class="num">${i+1}</span><span class="nm" style="padding-left:${t.lvl*14}px"><button class="tg" data-act="tog" aria-label="Collapse or expand"></button><input data-f="n" value="${esc(t.name)}" aria-label="Task name"></span><input data-f="s" type="date" aria-label="Start date"><input data-f="d" type="number" min="0" max="999" aria-label="Duration in days"><input data-f="c" type="number" min="0" max="100" aria-label="Percent complete"><input data-f="p" aria-label="Dependencies" placeholder="e.g. 1, 3"><input data-f="a" value="${esc(t.who)}" aria-label="Assignee"><span class="ro st"></span><span class="ro fin"></span><span class="ro fl"></span><span class="acts"><button data-act="out" title="Outdent: move up one level">←</button><button data-act="in" title="Indent: make a subtask of the task above">→</button><button data-act="sub" title="Add subtask">+</button><button data-act="del" title="Delete task and its subtasks">×</button><button data-act="cm" title="Comments">💬</button></span></div>`).join('');
-  refresh(true);
+  $('#rows').innerHTML=tasks.map((t,i)=>`<div class="row" data-i="${i}"><span class="num">${i+1}</span><span class="nm" style="padding-left:${t.lvl*14}px"><button class="tg" data-act="tog" aria-label="Collapse or expand"></button><textarea data-f="n" rows="1" aria-label="Task name">${esc(t.name)}</textarea></span><input data-f="s" type="date" aria-label="Start date"><input data-f="d" type="number" min="0" max="999" aria-label="Duration in days"><input data-f="c" type="number" min="0" max="100" aria-label="Percent complete"><input data-f="p" aria-label="Dependencies" placeholder="e.g. 1, 3"><input data-f="a" value="${esc(t.who)}" aria-label="Assignee"><span class="ro st"></span><span class="ro fin"></span><span class="ro fl"></span><span class="acts"><button data-act="out" title="Outdent: move up one level" aria-label="Outdent">${ic('outdent')}</button><button data-act="in" title="Indent: make a subtask of the task above" aria-label="Indent">${ic('indent')}</button><button data-act="sub" title="Add subtask" aria-label="Add subtask">${ic('sub')}</button><button data-act="del" title="Delete task and its subtasks" aria-label="Delete task">${ic('trash')}</button><button data-act="cm" title="Comments" aria-label="Comments">${ic('chat')}</button></span></div>`).join('');
+  fitNames();refresh(true);
 }
 function refresh(force){
   const r=compute(),act=document.activeElement;
@@ -258,7 +287,7 @@ function refresh(force){
     const tg=row.querySelector('.tg');tg.textContent=t.sum?(t.col?'▸':'▾'):'';
     row.style.display=t.vis?'':'none';
     row.classList.toggle('crit',t.crit&&showCrit);row.classList.toggle('cyc',t.cyc);row.classList.toggle('sum',t.sum);
-    row.querySelector('[data-act=cm]').textContent='💬'+(t.cm.length||'');
+    const cb=row.querySelector('[data-act=cm]'),k=String(t.cm.length);if(cb.dataset.n!==k){cb.dataset.n=k;cb.innerHTML=ic('chat')+(t.cm.length?`<small>${k}</small>`:'')}
   });
   const w=$('#warn');w.style.display=r.cyc.length?'block':'none';
   if(r.cyc.length)w.textContent='Circular dependency involving task'+(r.cyc.length>1?'s ':' ')+r.cyc.join(', ')+'. These tasks are not scheduled from their dependencies until the loop is removed.';
@@ -266,7 +295,7 @@ function refresh(force){
   $('#sum').innerHTML=tasks.length?`<span>Start <b>${F(r.start,1)}</b></span><span>Finish <b>${F(Math.max(r.end-1,r.start),1)}</b></span><span>Done <b>${r.pctAll}%</b></span><span>Critical <b>${nc} of ${r.nleaf}</b></span>`+(sp===null?'':`<span>Vs baseline <b style="color:${sp>0?'var(--crit)':'inherit'}">${sp>0?'+':''}${sp} days</b></span>`):'';
   $('#cp').innerHTML=nc?`<span>Critical path: <b>${r.crit.map(i=>i+1).join(' → ')}</b></span>`:'<span>Critical path: none yet</span>';
   if(cmUid&&cmTask())$('#cmt').textContent=cmTask().name;
-  gantt(r);dashboard(r);
+  measureRows(r);gantt(r);dashboard(r);if(presOn)schedSlide();
   clearTimeout(saveT);saveT=setTimeout(saveCurrent,800);
 }
 
@@ -277,7 +306,7 @@ function gantt(r){
   minD-=3;maxD+=12;if(maxD-minD<30)maxD=minD+30;
   if(drag){minD=view.minD;maxD=Math.max(maxD,view.maxD)}
   view={minD,maxD};
-  const nv=r.nvis,W=(maxD-minD)*dayW,H=Math.max(nv,1)*RH+RH,X=d=>(d-minD)*dayW;
+  const W=(maxD-minD)*dayW,H=(r.totalH||RH)+RH,X=d=>(d-minD)*dayW;
   let h='',b='';
   for(let d=minD;d<maxD;){
     const dt=new Date(d*DAY),nx=Math.round(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+1,1)/DAY),e=Math.min(nx,maxD);
@@ -292,11 +321,11 @@ function gantt(r){
     if(dayW>=18||dow===1)h+=`<text class="dt" x="${x+dayW/2}" y="38">${new Date(d*DAY).getUTCDate()}</text>`;
   }
   h+=`<line class="gl" x1="0" x2="${W}" y1="43.5" y2="43.5"/>`;
-  for(let i=1;i<=nv+1;i++)b+=`<line class="gl" x1="0" x2="${W}" y1="${i*RH-.5}" y2="${i*RH-.5}"/>`;
+  tasks.forEach(t=>{if(t.vis)b+=`<line class="gl" x1="0" x2="${W}" y1="${t.y+t.h-.5}" y2="${t.y+t.h-.5}"/>`});b+=`<line class="gl" x1="0" x2="${W}" y1="${H-.5}" y2="${H-.5}"/>`;
   if(todayN>=minD&&todayN<maxD)b+=`<line class="today" x1="${X(todayN)+dayW/2}" x2="${X(todayN)+dayW/2}" y1="0" y2="${H}"/>`;
   tasks.forEach((t,i)=>{
     if(!t.vis)return;
-    const c=t.crit&&showCrit,x=X(t.es),w=(t.ef-t.es)*dayW,y=t.pos*RH,cl=c?' crit':'',ms=!t.sum&&t.dur===0;
+    const c=t.crit&&showCrit,x=X(t.es),w=(t.ef-t.es)*dayW,y=t.y+(t.h-RH)/2,cl=c?' crit':'',ms=!t.sum&&t.dur===0;
     const tip=`<title>${esc(t.name)}\n${F(t.es,1)} to ${F(t.ef>t.es?t.ef-1:t.es,1)}\n${t.pr}% complete (${status(t)[0]})${t.sum?'':'\nFloat: '+(t.cyc?'n/a':t.slack+' days')}</title>`;
     let lx=x+w+8;
     if(t.bs)b+=`<rect class="base" x="${X(t.bs[0])}" y="${y+26}" width="${Math.max((t.bs[1]-t.bs[0])*dayW,3)}" height="3" rx="1.5"/>`;
@@ -309,9 +338,9 @@ function gantt(r){
   let a='';
   tasks.forEach((t,i)=>r.preds[i].forEach(j=>{
     const p=tasks[j];if(!t.vis||!p.vis)return;
-    const x1=X(p.ef),y1=p.pos*RH+RH/2,x2=X(t.es),y2=t.pos*RH+RH/2;
+    const x1=X(p.ef),y1=p.y+p.h/2,x2=X(t.es),y2=t.y+t.h/2;
     const c=showCrit&&p.crit&&t.crit&&t.es===p.ef?' crit':'';
-    const ym=y2>y1?y1+RH/2:y1-RH/2;
+    const ym=y2>y1?p.y+p.h:p.y;
     const d=x2>=x1+12?`M${x1},${y1}H${x1+6}V${y2}H${x2-1}`:`M${x1},${y1}H${x1+6}V${ym}H${x2-8}V${y2}H${x2-1}`;
     a+=`<path class="arw${c}" d="${d}" marker-end="url(#ah${c?'c':''})"/>`;
   }));
@@ -334,7 +363,7 @@ addEventListener('pointerup',()=>{drag=null;refresh()});
 /* ---- editing ---- */
 $('#rows').addEventListener('input',e=>{
   const f=e.target.dataset.f,i=+e.target.closest('.row').dataset.i;
-  if(f==='n'){tasks[i].name=e.target.value;refresh()}else if(f==='a'){tasks[i].who=e.target.value;refresh()}
+  if(f==='n'){const v=e.target.value.replace(/\n/g,' ');if(v!==e.target.value)e.target.value=v;tasks[i].name=v;growName(e.target);refresh()}else if(f==='a'){tasks[i].who=e.target.value;refresh()}
 });
 $('#rows').addEventListener('change',e=>{
   const el=e.target,f=el.dataset.f;if(!f||f==='n'||f==='a')return;
@@ -401,6 +430,220 @@ $('#cma').onclick=()=>{const t=cmTask(),v=$('#cmi').value.trim();if(!t||!v)retur
 $('#cmi').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))$('#cma').click()});
 $('#cml').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;cmTask().cm.splice(+b.dataset.k,1);renderCm();refresh()});
 
+/* ---- icons ---- */
+const ICONS={
+plus:'<path d="M12 5v14M5 12h14"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
+download:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',upload:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',
+archive:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',
+flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',flagx:'<path d="M5 21V4M5 4h9l-2 4 2 4H5M17 16l4 4M21 16l-4 4"/>',
+zoomin:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M11 8v6M8 11h6"/>',zoomout:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',half:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
+present:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',expand:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+chat:'<path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-4 4v-4H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>',
+indent:'<path d="M4 6h16M12 12h8M4 18h16M4 9l3 3-3 3"/>',outdent:'<path d="M4 6h16M12 12h8M4 18h16M7 9l-3 3 3 3"/>',
+sub:'<path d="M6 4v9a3 3 0 0 0 3 3h4"/><path d="M17 13v6M14 16h6"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',
+sheet:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',doc:'<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/>',
+image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/>',
+braces:'<path d="M9 4H8a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h1M15 4h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-1"/>'};
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
+document.querySelectorAll('[data-ic]').forEach(b=>b.insertAdjacentHTML('afterbegin',ic(b.dataset.ic)));
+const safe=fn=>async(...a)=>{try{await fn(...a)}catch(err){toast(err.message==='offline'?'You appear to be offline.':err.message)}};
+
+/* ---- task names wrap, so row heights vary: keep table rows and chart rows in step ---- */
+function growName(ta){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px'}
+function fitNames(){
+  const a=[...document.querySelectorAll('#rows textarea[data-f=n]')].filter(x=>x.offsetParent!==null);
+  a.forEach(x=>x.style.height='auto');
+  const hs=a.map(x=>x.scrollHeight);
+  a.forEach((x,i)=>{x.style.height=hs[i]+'px'});
+}
+function measureRows(r){
+  let y=0;
+  document.querySelectorAll('#rows .row').forEach((row,i)=>{const t=tasks[i];if(!t||!t.vis)return;const h=row.offsetHeight||RH;t.y=y;t.h=h;y+=h});
+  r.totalH=y;
+}
+let fitRaf=0;
+function schedFit(){cancelAnimationFrame(fitRaf);fitRaf=requestAnimationFrame(()=>{if(!tasks.length)return;fitNames();refresh()})}
+$('#rows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='TEXTAREA'){e.preventDefault();e.target.blur()}});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(schedFit);
+
+/* ---- plan renderer (canvas): used for JPEG, PDF and the presentation slide ---- */
+const PAL_LIGHT={bg:'#ffffff',head:'#e6eaef',ink:'#1d2733',muted:'#6b7785',line:'#d9dee4',we:'#f3f5f8',accent:'#2f6fdd',crit:'#d6402b',today:'#d99a00',ok:'#2e9d62'};
+function curPal(){const cs=getComputedStyle(document.documentElement),g=k=>cs.getPropertyValue(k).trim();
+  return{bg:g('--panel'),head:g('--head'),ink:g('--ink'),muted:g('--muted'),line:g('--line'),we:g('--we'),accent:g('--accent'),crit:g('--crit'),today:g('--today'),ok:'#2e9d62'}}
+const Fd=n=>new Date(n*DAY).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit',timeZone:'UTC'});
+const Fsh=n=>new Date(n*DAY).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});
+function renderPlan(o){
+  const r=compute(),P=o.pal,sc=o.scale||2,full=o.mode!=='slide',w=o.w;
+  const FONT='"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif',F2=(px,b)=>`${b?'600 ':''}${px}px ${FONT}`;
+  const num=new Map(tasks.map((t,i)=>[t,i+1])),fe=t=>t.ef>t.es?t.ef-1:t.es;
+  let rows=tasks.filter(t=>t.vis),more=0;
+  const headH=40,titleH=o.title?60:0,legH=full?28:0;
+  if(!full){const mx=Math.max(3,Math.floor((o.h-headH)/16));if(rows.length>mx){more=rows.length-(mx-1);rows=rows.slice(0,mx-1)}}
+  const nrows=rows.length+(more?1:0);
+  const rh=full?24:Math.max(14,Math.min(28,Math.floor((o.h-headH)/Math.max(nrows,1))));
+  const fs=full?12:Math.max(10,Math.min(13,rh-6));
+  const m=document.createElement('canvas').getContext('2d');m.font=F2(fs);
+  const cols=full?[['#',26,'c',t=>String(num.get(t))],['Task',0,'l',t=>t.name],['Start',66,'l',t=>Fd(t.es)],['Days',38,'r',t=>String(t.ef-t.es)],['%',38,'r',t=>t.pr+'%'],['Depends',62,'l',t=>t.sum?'':depText(t)],['Assignee',86,'l',t=>t.who],['Status',80,'l',t=>status(t)[0]],['Finish',66,'l',t=>Fd(fe(t))]]
+    :[['Task',0,'l',t=>t.name],['Start',66,'l',t=>Fd(t.es)],['Finish',66,'l',t=>Fd(fe(t))],['%',38,'r',t=>t.pr+'%']];
+  const nm=Math.max(60,...rows.map(t=>m.measureText(t.name).width+t.lvl*12))+16;
+  const nameW=full?Math.max(150,Math.min(320,nm)):Math.min(Math.max(150,nm),w*0.32);
+  const tw=cols.reduce((a,c)=>a+(c[1]||nameW),0),gx=tw,gw=w-tw-6;
+  let minD=tasks.length?Math.min(...tasks.map(t=>t.es))-1:todayN,maxD=tasks.length?Math.max(...tasks.map(t=>t.ef+(t.slack>0?t.slack:0)))+2:todayN+30;
+  const days=Math.max(maxD-minD,7),dayW=gw/days;
+  const H=titleH+headH+nrows*rh+legH+6,y0=titleH,yb=y0+headH;
+  const cv=document.createElement('canvas');cv.width=Math.round(w*sc);cv.height=Math.round(H*sc);
+  const c=cv.getContext('2d');c.scale(sc,sc);c.fillStyle=P.bg;c.fillRect(0,0,w,H);c.textBaseline='middle';
+  const fit=(s,mw)=>{if(c.measureText(s).width<=mw)return s;while(s.length>1&&c.measureText(s+'…').width>mw)s=s.slice(0,-1);return s+'…'};
+  const X=d=>gx+(d-minD)*dayW;
+  if(o.title){c.textAlign='left';c.fillStyle=P.ink;c.font=F2(20,1);c.fillText(curName,12,22);c.fillStyle=P.muted;c.font=F2(12);
+    c.fillText(`${F(r.start,1)} to ${F(Math.max(r.end-1,r.start),1)}   |   ${r.pctAll}% complete   |   ${$('#dhealth').textContent||'No status'}   |   ${r.crit.length} critical tasks   |   Exported ${F(todayN,1)}`,12,44)}
+  c.fillStyle=P.head;c.fillRect(0,y0,w,headH);
+  let cx=0;const cxs=[];c.font=F2(11,1);
+  cols.forEach(col=>{const cw=col[1]||nameW;cxs.push([cx,cw]);c.fillStyle=P.muted;c.textAlign=col[2]==='r'?'right':col[2]==='c'?'center':'left';
+    c.fillText(col[0],col[2]==='r'?cx+cw-6:col[2]==='c'?cx+cw/2:cx+6,yb-12);cx+=cw});
+  c.textAlign='left';
+  for(let d=minD;d<maxD;){const dt=new Date(d*DAY),nx=Math.round(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+1,1)/DAY),e=Math.min(nx,maxD);
+    c.strokeStyle=P.line;c.lineWidth=1;c.strokeRect(X(d)+.5,y0+.5,(e-d)*dayW,19);
+    if((e-d)*dayW>46){c.fillStyle=P.ink;c.font=F2(11,1);c.textAlign='left';c.fillText(dt.toLocaleDateString('en-GB',{month:'short',year:'numeric',timeZone:'UTC'}),X(d)+5,y0+10)}d=e}
+  for(let d=minD;d<maxD;d++){const dow=new Date(d*DAY).getUTCDay(),x=X(d);
+    if(dow===0||dow===6){c.fillStyle=P.we;c.fillRect(x,y0+20,dayW,20);c.fillRect(x,yb,dayW,nrows*rh)}
+    if(dow===1){c.strokeStyle=P.line;c.beginPath();c.moveTo(x+.5,y0+20);c.lineTo(x+.5,yb+nrows*rh);c.stroke()}
+    if(dayW>=13||(dow===1&&dayW>=4.5)){c.fillStyle=P.muted;c.font=F2(9);c.textAlign='center';c.fillText(String(new Date(d*DAY).getUTCDate()),x+dayW/2,y0+31)}}
+  rows.forEach((t,i)=>{const y=yb+i*rh;
+    c.strokeStyle=P.line;c.lineWidth=1;c.beginPath();c.moveTo(0,y+rh-.5);c.lineTo(w,y+rh-.5);c.stroke();
+    if(t.crit&&showCrit){c.fillStyle=P.crit;c.fillRect(0,y,3,rh-1)}
+    c.font=F2(fs,t.sum);
+    cols.forEach((col,k)=>{const[x0,cw]=cxs[k];let s=col[3](t);if(!s)return;const ind=col[0]==='Task'?t.lvl*12:0,sk=status(t)[1];
+      c.textAlign=col[2]==='r'?'right':col[2]==='c'?'center':'left';
+      c.fillStyle=col[0]==='Status'?(sk==='late'?P.crit:sk==='done'?P.ok:P.ink):(col[0]==='#'||col[0]==='Depends'?P.muted:P.ink);
+      s=fit(s,cw-12-ind);c.fillText(s,col[2]==='r'?x0+cw-6:col[2]==='c'?x0+cw/2:x0+6+ind,y+rh/2+.5)})});
+  if(more){c.font=F2(fs);c.fillStyle=P.muted;c.textAlign='left';c.fillText(`+ ${more} more tasks not shown`,6,yb+rows.length*rh+rh/2)}
+  const rowIdx=new Map(rows.map((t,i)=>[t,i])),bh=Math.min(rh-8,16);
+  const rr=(x,y,ww,hh,rad)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,Math.max(ww,0),hh,rad);else c.rect(x,y,Math.max(ww,0),hh)};
+  rows.forEach((t,i)=>{const y=yb+i*rh,x=X(t.es),bw=(t.ef-t.es)*dayW,by=y+(rh-bh)/2,cr=t.crit&&showCrit;
+    if(t.bs){c.globalAlpha=.75;c.fillStyle=P.muted;c.fillRect(X(t.bs[0]),y+rh-5,Math.max((t.bs[1]-t.bs[0])*dayW,2),2.5);c.globalAlpha=1}
+    if(t.slack>0){c.globalAlpha=.28;c.fillStyle=P.accent;rr(x+bw,by+bh/2-2,t.slack*dayW,4,2);c.fill();c.globalAlpha=1}
+    if(t.sum){c.globalAlpha=.85;c.fillStyle=P.ink;c.beginPath();c.moveTo(x,by+1);c.lineTo(x+bw,by+1);c.lineTo(x+bw,by+bh);c.lineTo(x+bw-5,by+bh*.55);c.lineTo(x+5,by+bh*.55);c.lineTo(x,by+bh);c.closePath();c.fill();c.globalAlpha=1}
+    else if(t.dur===0){const cy=y+rh/2,rd=bh/2+1;c.fillStyle=cr?P.crit:P.accent;c.beginPath();c.moveTo(x,cy-rd);c.lineTo(x+rd,cy);c.lineTo(x,cy+rd);c.lineTo(x-rd,cy);c.closePath();c.fill()}
+    else{c.fillStyle=cr?P.crit:P.accent;rr(x,by,bw,bh,3);c.fill();if(t.pr>0){c.fillStyle='rgba(0,0,0,.3)';rr(x,by,bw*t.pr/100,bh,3);c.fill()}}});
+  tasks.forEach((t,i)=>r.preds[i].forEach(j=>{const p=tasks[j],a=rowIdx.get(p),b=rowIdx.get(t);if(a===undefined||b===undefined)return;
+    const x1=X(p.ef),y1=yb+a*rh+rh/2,x2=X(t.es),y2=yb+b*rh+rh/2,cr=showCrit&&p.crit&&t.crit&&t.es===p.ef;
+    c.strokeStyle=cr?P.crit:P.muted;c.lineWidth=cr?1.5:1;c.beginPath();c.moveTo(x1,y1);
+    if(x2>=x1+8){c.lineTo(x1+4,y1);c.lineTo(x1+4,y2);c.lineTo(x2-1,y2)}
+    else{const ym=y2>y1?yb+(a+1)*rh:yb+a*rh;c.lineTo(x1+4,y1);c.lineTo(x1+4,ym);c.lineTo(x2-6,ym);c.lineTo(x2-6,y2);c.lineTo(x2-1,y2)}
+    c.stroke();c.fillStyle=c.strokeStyle;c.beginPath();c.moveTo(x2,y2);c.lineTo(x2-5,y2-3);c.lineTo(x2-5,y2+3);c.closePath();c.fill();c.lineWidth=1}));
+  if(todayN>=minD&&todayN<maxD){c.strokeStyle=P.today;c.lineWidth=2;c.beginPath();c.moveTo(X(todayN)+dayW/2,y0+20);c.lineTo(X(todayN)+dayW/2,yb+nrows*rh);c.stroke()}
+  c.strokeStyle=P.line;c.lineWidth=1.5;c.beginPath();c.moveTo(gx,y0);c.lineTo(gx,yb+nrows*rh);c.stroke();
+  if(full){let lx=12;const ly=H-legH/2;c.font=F2(11);c.textAlign='left';
+    [[P.accent,'Task'],[P.crit,'Critical path'],['rgba(0,0,0,.3)','Progress'],[P.accent+'47','Float'],[P.muted,'Baseline'],[P.today,'Today']].forEach(([col,l])=>{
+      c.fillStyle=col;c.fillRect(lx,ly-5,14,10);c.fillStyle=P.muted;c.fillText(l,lx+19,ly);lx+=19+c.measureText(l).width+18})}
+  cv.meta={W:cv.width,H:cv.height,hdrY0:Math.round(y0*sc),hdrH:Math.round(headH*sc),edges:[...rows.map((_,i)=>(yb+(i+1)*rh)*sc),(yb+nrows*rh)*sc].map(Math.round)};
+  cv.logical={w,h:H};return cv;
+}
+
+/* ---- exports ---- */
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'project';
+function saveBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+const exportCanvas=()=>renderPlan({w:1700,scale:2,pal:PAL_LIGHT,title:true,mode:'full'});
+async function exportJPEG(){
+  const cv=exportCanvas(),b=await new Promise(res=>cv.toBlob(res,'image/jpeg',.92));
+  if(!b)throw new Error('The image is too large to export. Collapse some tasks and try again.');
+  saveBlob(b,slug(curName)+'.jpeg');
+}
+const jpegBytes=cv=>Uint8Array.from(atob(cv.toDataURL('image/jpeg',.92).split(',')[1]),ch=>ch.charCodeAt(0));
+function makePDF(pages){
+  const enc=new TextEncoder(),chunks=[],offs=[];let len=0;
+  const push=x=>{const u=typeof x==='string'?enc.encode(x):x;chunks.push(u);len+=u.length};
+  const obj=(n,body)=>{offs[n]=len;push(`${n} 0 obj\n${body}\nendobj\n`)};
+  push('%PDF-1.4\n');obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2,`<< /Type /Pages /Kids [${pages.map((_,i)=>`${3+3*i} 0 R`).join(' ')}] /Count ${pages.length} >>`);
+  pages.forEach((p,i)=>{
+    const pw=842,ph=595,mg=24,f=Math.min((pw-2*mg)/p.w,(ph-2*mg)/p.h),w=p.w*f,h=p.h*f,x=(pw-w)/2,y=ph-mg-h;
+    obj(3+3*i,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Contents ${4+3*i} 0 R /Resources << /XObject << /Im0 ${5+3*i} 0 R >> >> >>`);
+    const cs=`q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im0 Do Q`;
+    obj(4+3*i,`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+    offs[5+3*i]=len;push(`${5+3*i} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpeg.length} >>\nstream\n`);
+    push(p.jpeg);push('\nendstream\nendobj\n');
+  });
+  const n=3+3*pages.length,xr=len;
+  push(`xref\n0 ${n}\n0000000000 65535 f \n`);for(let k=1;k<n;k++)push(String(offs[k]).padStart(10,'0')+' 00000 n \n');
+  push(`trailer\n<< /Size ${n} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`);
+  return new Blob(chunks,{type:'application/pdf'});
+}
+function exportPDF(){
+  const src=exportCanvas(),M=src.meta,f=(842-48)/M.W,maxH=(595-48)/f,pages=[];
+  let start=0,first=true;
+  while(start<M.H-1){
+    const hh=first?0:M.hdrH,limit=start+maxH-hh;let end=M.H;
+    if(end>limit){const cand=M.edges.filter(e=>e>start&&e<=limit);end=cand.length?cand[cand.length-1]:Math.floor(limit)}
+    const c2=document.createElement('canvas');c2.width=M.W;c2.height=Math.ceil(hh+end-start);
+    const x=c2.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c2.width,c2.height);
+    if(hh)x.drawImage(src,0,M.hdrY0,M.W,hh,0,0,M.W,hh);
+    x.drawImage(src,0,start,M.W,end-start,0,hh,M.W,end-start);
+    pages.push({jpeg:jpegBytes(c2),w:c2.width,h:c2.height});first=false;start=end;
+  }
+  saveBlob(makePDF(pages),slug(curName)+'.pdf');
+}
+let xlsxP=null;
+const loadXLSX=()=>window.XLSX?Promise.resolve():(xlsxP=xlsxP||new Promise((ok,no)=>{
+  const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=ok;s.onerror=()=>{xlsxP=null;no(new Error('Couldn’t load the Excel library. Check your connection and try again.'))};document.head.appendChild(s)}));
+async function exportXLS(type){
+  await loadXLSX();const X=XLSX,r=compute(),ser=n=>n+25569,fe=(a,b)=>b>a?b-1:a;
+  const hdr=['ID','Task','Level','Type','Start','Finish','Duration (days)','% Complete','Status','Predecessors','Assignee','Critical','Float (days)','Baseline start','Baseline finish','Finish variance (days)','Comments'];
+  const rows=tasks.map((t,i)=>[i+1,'    '.repeat(t.lvl)+t.name,t.lvl+1,t.sum?'Summary':t.dur===0?'Milestone':'Task',ser(t.es),ser(fe(t.es,t.ef)),t.ef-t.es,t.pr/100,status(t)[0],t.sum?'':depText(t),t.who,t.sum?'':t.crit?'Yes':'No',t.sum||t.cyc?'':t.slack,
+    t.bs?ser(t.bs[0]):'',t.bs?ser(fe(t.bs[0],t.bs[1])):'',t.bs?t.ef-t.bs[1]:'',t.cm.map(c=>new Date(c.t).toISOString().slice(0,10)+': '+c.x).join('\n')]);
+  const ws=X.utils.aoa_to_sheet([hdr,...rows]);
+  rows.forEach((_,k)=>{[4,5,13,14].forEach(C=>{const c=ws[X.utils.encode_cell({r:k+1,c:C})];if(c&&typeof c.v==='number')c.z='yyyy-mm-dd'});const p=ws[X.utils.encode_cell({r:k+1,c:7})];if(p)p.z='0%'});
+  ws['!cols']=[5,42,6,10,12,12,10,10,12,14,16,8,10,13,13,12,50].map(wch=>({wch}));
+  const s1=X.utils.aoa_to_sheet([['Project',curName],['Start',ser(r.start)],['Finish',ser(Math.max(r.end-1,r.start))],['% complete',r.pctAll/100],['Health',$('#dhealth').textContent||''],['Tasks (excluding summaries)',r.nleaf],['Critical tasks',r.crit.length],['Finish vs baseline (days)',r.slip===null?'No baseline':r.slip],['Exported',ser(todayN)]]);
+  ['B2','B3','B9'].forEach(a=>{s1[a].z='yyyy-mm-dd'});s1.B4.z='0%';s1['!cols']=[{wch:28},{wch:34}];
+  const st=tasks.length?Math.min(...tasks.map(t=>t.es)):todayN,en=tasks.length?Math.max(...tasks.map(t=>t.ef)):todayN+30;
+  const wk0=st-((new Date(st*DAY).getUTCDay()+6)%7),nw=Math.min(156,Math.ceil((en-wk0)/7)+1);
+  const th=['ID','Task',...Array.from({length:nw},(_,k)=>Fsh(wk0+k*7))];
+  const tr=tasks.map((t,i)=>[i+1,t.name,...Array.from({length:nw},(_,k)=>{const a=wk0+k*7,b=a+7;
+    if(!t.sum&&t.dur===0)return t.es>=a&&t.es<b?'◆':'';return t.es<b&&t.ef>a?(t.sum?'▬':t.crit?'█':'▒'):''})]);
+  const s3=X.utils.aoa_to_sheet([th,...tr,[],['','Key: █ critical, ▒ task, ◆ milestone, ▬ summary. Columns are week starts.']]);
+  s3['!cols']=[{wch:5},{wch:36},...Array.from({length:nw},()=>({wch:7}))];
+  const wb=X.utils.book_new();X.utils.book_append_sheet(wb,s1,'Summary');X.utils.book_append_sheet(wb,ws,'Tasks');X.utils.book_append_sheet(wb,s3,'Timeline');
+  X.writeFile(wb,slug(curName)+'.'+type,{bookType:type==='xls'?'biff8':'xlsx'});
+}
+const EXPORTS={xlsx:()=>exportXLS('xlsx'),xls:()=>exportXLS('xls'),pdf:async()=>exportPDF(),jpeg:exportJPEG,
+  json:async()=>{await flush();download(curName+'-planline',{planline:1,name:curName,...serialize()})}};
+const closeMenu=()=>{$('#expmenu').hidden=true;$('#exp').setAttribute('aria-expanded','false')};
+$('#exp').onclick=e=>{e.stopPropagation();const m=$('#expmenu'),open=m.hidden;m.hidden=!open;$('#exp').setAttribute('aria-expanded',String(open))};
+$('#expmenu').onclick=safe(async e=>{
+  const b=e.target.closest('[data-fmt]');if(!b)return;closeMenu();
+  const f=b.dataset.fmt;toast('Preparing '+f.toUpperCase()+'…');await EXPORTS[f]();toast('Exported '+f.toUpperCase()+'.');
+});
+document.addEventListener('click',closeMenu);
+addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
+
+/* ---- presentation mode: a 16:9 slide that mirrors the live project ---- */
+let presOn=false,presT=0;
+const schedSlide=()=>{cancelAnimationFrame(presT);presT=requestAnimationFrame(drawSlide)};
+const fitSlide=()=>{$('#slide').style.transform=`translate(-50%,-50%) scale(${Math.min(innerWidth/1280,innerHeight/720)})`};
+function drawSlide(){
+  if(!presOn)return;
+  const r=compute(),sl=$('#slide'),hp=$('#dhealth'),cards=[...$('#dgrid').querySelectorAll('.card')].slice(0,5).map(x=>x.outerHTML).join('');
+  sl.innerHTML=`<div class="sh"><div><h1>${esc(curName)}</h1><div class="sub">${tasks.length?F(r.start,1)+' to '+F(Math.max(r.end-1,r.start),1)+'. ':''}As of ${F(todayN,1)}</div></div>${hp.textContent?`<span class="${hp.className}">${hp.textContent}</span>`:''}</div><div class="sk">${cards}</div><div class="sg"></div><div class="sf"><span>Red bars are critical-path tasks. The darker part of a bar is progress. The thin grey bar is the baseline.</span><span>Esc to exit, F for full screen</span></div>`;
+  const sg=sl.querySelector('.sg'),cv=renderPlan({w:sg.clientWidth-12,h:sg.clientHeight-12,scale:Math.min(3,Math.max(2,devicePixelRatio||2)),pal:curPal(),mode:'slide'});
+  cv.style.width=cv.logical.w+'px';cv.style.height=cv.logical.h+'px';sg.appendChild(cv);
+}
+function setPres(on){
+  presOn=on;$('#pres').hidden=!on;$('#presbtn').setAttribute('aria-pressed',String(on));
+  $('#presbtn').innerHTML=ic('present')+(on?'Exit presentation':'Presentation');
+  document.body.style.overflow=on?'hidden':'';
+  if(on){fitSlide();if(tasks.length)refresh();drawSlide()}else if(document.fullscreenElement)document.exitFullscreen();
+}
+const toggleFS=()=>document.fullscreenElement?document.exitFullscreen():($('#pres').requestFullscreen&&$('#pres').requestFullscreen());
+$('#presbtn').onclick=()=>setPres(!presOn);$('#pexit').onclick=()=>setPres(false);$('#pfs').onclick=toggleFS;
+addEventListener('keydown',e=>{if(!presOn)return;if(e.key==='Escape'&&!document.fullscreenElement)setPres(false);else if(e.key==='f'||e.key==='F')toggleFS()});
+addEventListener('resize',()=>{if(presOn)fitSlide()});
+
 /* ---- resizable divider ---- */
 const leftEl=$('#left'),splitEl=$('#split');
 let lw=parseInt(localStorage.getItem('planline.lw'))||884,sd=false;
@@ -408,7 +651,7 @@ const maxW=()=>Math.max(480,Math.min(1100,innerWidth-160));
 function setLeft(w,save){
   lw=Math.max(480,Math.min(maxW(),Math.round(w)));
   leftEl.style.width=lw+'px';leftEl.dataset.t=lw>=860?'l':lw>=740?'m':lw>=650?'s':'x';
-  splitEl.setAttribute('aria-valuenow',lw);
+  splitEl.setAttribute('aria-valuenow',lw);schedFit();
   if(save)try{localStorage.setItem('planline.lw',lw)}catch(e){}
 }
 splitEl.setAttribute('aria-valuemin',480);
@@ -433,7 +676,7 @@ if(!THEMES.includes(theme))theme='auto';
 function applyTheme(){
   const r=document.documentElement;
   if(theme==='auto')r.removeAttribute('data-theme');else r.dataset.theme=theme;
-  $('#theme').textContent=TL[theme];$('#theme').title='Theme: '+theme+'. Click to change.';
+  $('#theme').innerHTML=ic({auto:'half',light:'sun',dark:'moon'}[theme])+TL[theme].slice(2);$('#theme').title='Theme: '+theme+'. Click to change.';
   try{localStorage.setItem('planline.theme',theme)}catch(e){}
 }
 $('#theme').onclick=()=>{theme=THEMES[(THEMES.indexOf(theme)+1)%3];applyTheme()};
@@ -543,8 +786,8 @@ $('#dup').onclick=guard(async()=>{await flush();await openProject(await createPr
 let armed=false;
 $('#del').onclick=guard(async()=>{
   const b=$('#del');
-  if(!armed){armed=true;b.textContent='Confirm';setTimeout(()=>{armed=false;b.textContent='Delete'},3000);return}
-  armed=false;b.textContent='Delete';
+  if(!armed){armed=true;b.innerHTML=ic('trash')+'Confirm';setTimeout(()=>{armed=false;b.innerHTML=ic('trash')+'Delete'},3000);return}
+  armed=false;b.innerHTML=ic('trash')+'Delete';
   const gone=curName,id=curId;clearTimeout(saveT);
   await api('/'+id,{method:'DELETE'});
   index=index.filter(p=>p.id!==id);curId='';
@@ -557,7 +800,7 @@ function download(name,obj){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));
   a.download=slug+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
-$('#exp').onclick=guard(async()=>{await flush();download(curName+'-planline',{planline:1,name:curName,...serialize()})});
+
 $('#expall').onclick=guard(async()=>{
   await flush();const all=await Promise.all(index.map(p=>api('/'+p.id)));
   download('planline-backup',{planline:1,projects:all.map(p=>({name:p.name,tasks:p.tasks}))});

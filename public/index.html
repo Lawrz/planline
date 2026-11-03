@@ -33,7 +33,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 #wrap{flex:1;overflow:auto;background:var(--panel);position:relative}
 #inner{display:flex;align-items:flex-start;min-width:max-content}
 #left{position:sticky;left:0;z-index:4;width:884px;flex:none;background:var(--panel);border-right:2px solid var(--line)}
-.row,.hd{display:grid;grid-template-columns:28px minmax(140px,1fr) 108px 44px 50px 68px 80px 96px 56px 42px 116px;align-items:center;height:32px;border-bottom:1px solid var(--line)}
+.row,.hd{display:grid;grid-template-columns:44px minmax(140px,1fr) 108px 44px 50px 68px 80px 96px 56px 42px 116px;align-items:center;height:32px;border-bottom:1px solid var(--line)}
 .hd{height:44px;position:sticky;top:0;z-index:3;background:var(--head);font-weight:600;color:var(--muted)}
 .hd span{padding:0 6px}
 .row input{width:100%;height:100%;min-width:0;border:0;background:transparent;padding:0 6px;font-size:13px}
@@ -99,11 +99,11 @@ svg text{font-family:inherit}
 #split:hover::after,#split:focus-visible::after,.resizing #split::after{background:var(--accent)}
 #split:focus-visible{outline:none}
 .resizing{cursor:col-resize;user-select:none}
-#left[data-t=m] :is(.row,.hd){grid-template-columns:28px minmax(140px,1fr) 108px 44px 50px 68px 80px 96px 116px}
+#left[data-t=m] :is(.row,.hd){grid-template-columns:44px minmax(140px,1fr) 108px 44px 50px 68px 80px 96px 116px}
 #left[data-t=m] :is(.row,.hd)>:is(:nth-child(9),:nth-child(10)){display:none}
-#left[data-t=s] :is(.row,.hd){grid-template-columns:28px minmax(140px,1fr) 108px 44px 50px 68px 96px 116px}
+#left[data-t=s] :is(.row,.hd){grid-template-columns:44px minmax(140px,1fr) 108px 44px 50px 68px 96px 116px}
 #left[data-t=s] :is(.row,.hd)>:is(:nth-child(7),:nth-child(9),:nth-child(10)){display:none}
-#left[data-t=x] :is(.row,.hd){grid-template-columns:28px minmax(120px,1fr) 108px 44px 50px 116px}
+#left[data-t=x] :is(.row,.hd){grid-template-columns:44px minmax(108px,1fr) 108px 44px 50px 116px}
 #left[data-t=x] :is(.row,.hd)>:is(:nth-child(6),:nth-child(7),:nth-child(8),:nth-child(9),:nth-child(10)){display:none}
 #dash{background:var(--panel);border-top:1px solid var(--line)}
 .dh{display:flex;align-items:center;gap:10px;padding:6px 14px}.dh b{font-size:13px}.dh button{margin-left:auto;padding:2px 9px;font-size:12px}
@@ -143,6 +143,11 @@ button{display:inline-flex;align-items:center;justify-content:center}
 #slide .sf{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
 .pbar{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:2;opacity:0;transition:opacity .2s}#pres:hover .pbar,.pbar:focus-within{opacity:1}
 .pbar button{background:rgba(255,255,255,.14);color:#fff;border-color:transparent;padding:7px 9px}
+.row .num{justify-content:flex-start;gap:1px;padding-left:4px}
+.gp{display:inline-flex;cursor:grab;color:var(--muted);touch-action:none;padding:6px 1px}.gp .ic{width:12px;height:12px;margin:0}.gp:hover{color:var(--accent)}
+.row.dragging{opacity:.4}.row.drop-before{box-shadow:inset 0 3px 0 var(--accent)}.row.drop-after{box-shadow:inset 0 -3px 0 var(--accent)}
+.row.drop-into{background:color-mix(in srgb,var(--accent) 16%,var(--panel))}
+body.rowdrag{cursor:grabbing;user-select:none}body.rowdrag .gp{cursor:grabbing}
 </style>
 </head>
 <body>
@@ -269,7 +274,7 @@ function status(t){
 /* ---- table ---- */
 const depText=t=>t.deps.map(u=>tasks.findIndex(x=>x.uid===u)+1).join(', ');
 function buildRows(){
-  $('#rows').innerHTML=tasks.map((t,i)=>`<div class="row" data-i="${i}"><span class="num">${i+1}</span><span class="nm" style="padding-left:${t.lvl*14}px"><button class="tg" data-act="tog" aria-label="Collapse or expand"></button><textarea data-f="n" rows="1" aria-label="Task name">${esc(t.name)}</textarea></span><input data-f="s" type="date" aria-label="Start date"><input data-f="d" type="number" min="0" max="999" aria-label="Duration in days"><input data-f="c" type="number" min="0" max="100" aria-label="Percent complete"><input data-f="p" aria-label="Dependencies" placeholder="e.g. 1, 3"><input data-f="a" value="${esc(t.who)}" aria-label="Assignee"><span class="ro st"></span><span class="ro fin"></span><span class="ro fl"></span><span class="acts"><button data-act="out" title="Outdent: move up one level" aria-label="Outdent">${ic('outdent')}</button><button data-act="in" title="Indent: make a subtask of the task above" aria-label="Indent">${ic('indent')}</button><button data-act="sub" title="Add subtask" aria-label="Add subtask">${ic('sub')}</button><button data-act="del" title="Delete task and its subtasks" aria-label="Delete task">${ic('trash')}</button><button data-act="cm" title="Comments" aria-label="Comments">${ic('chat')}</button></span></div>`).join('');
+  $('#rows').innerHTML=tasks.map((t,i)=>`<div class="row" data-i="${i}"><span class="num"><span class="gp" data-grab title="Drag to reorder (moves its subtasks too)" aria-label="Drag to reorder">${ic('grip')}</span>${i+1}</span><span class="nm" style="padding-left:${t.lvl*14}px"><button class="tg" data-act="tog" aria-label="Collapse or expand"></button><textarea data-f="n" rows="1" aria-label="Task name">${esc(t.name)}</textarea></span><input data-f="s" type="date" aria-label="Start date"><input data-f="d" type="number" min="0" max="999" aria-label="Duration in days"><input data-f="c" type="number" min="0" max="100" aria-label="Percent complete"><input data-f="p" aria-label="Dependencies" placeholder="e.g. 1, 3"><input data-f="a" value="${esc(t.who)}" aria-label="Assignee"><span class="ro st"></span><span class="ro fin"></span><span class="ro fl"></span><span class="acts"><button data-act="out" title="Outdent: move up one level" aria-label="Outdent">${ic('outdent')}</button><button data-act="in" title="Indent: make a subtask of the task above" aria-label="Indent">${ic('indent')}</button><button data-act="sub" title="Add subtask" aria-label="Add subtask">${ic('sub')}</button><button data-act="del" title="Delete task and its subtasks" aria-label="Delete task">${ic('trash')}</button><button data-act="cm" title="Comments" aria-label="Comments">${ic('chat')}</button></span></div>`).join('');
   fitNames();refresh(true);
 }
 function refresh(force){
@@ -432,7 +437,7 @@ $('#cml').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!
 
 /* ---- icons ---- */
 const ICONS={
-plus:'<path d="M12 5v14M5 12h14"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',grip:'<path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" stroke-width="3"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
 trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
 download:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',upload:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',
 archive:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',
@@ -644,13 +649,64 @@ $('#presbtn').onclick=()=>setPres(!presOn);$('#pexit').onclick=()=>setPres(false
 addEventListener('keydown',e=>{if(!presOn)return;if(e.key==='Escape'&&!document.fullscreenElement)setPres(false);else if(e.key==='f'||e.key==='F')toggleFS()});
 addEventListener('resize',()=>{if(presOn)fitSlide()});
 
+/* ---- drag to reorder tasks and subtasks ---- */
+let rd=null;
+const clearDrop=()=>document.querySelectorAll('#rows .row').forEach(r=>r.classList.remove('dragging','drop-before','drop-after','drop-into'));
+function moveBlock(i,ti,zone){
+  const e=endOf(i),block=tasks.slice(i,e),tgt=tasks[ti];
+  const lvl=zone==='into'?tgt.lvl+1:tgt.lvl;
+  let at=zone==='before'?ti:endOf(ti);
+  if(zone==='into')tgt.col=false;
+  const d=lvl-block[0].lvl;block.forEach(t=>t.lvl+=d);
+  tasks.splice(i,e-i);
+  if(at>i)at-=block.length;
+  tasks.splice(at,0,...block);
+  buildRows();
+}
+$('#rows').addEventListener('pointerdown',e=>{
+  const g=e.target.closest('[data-grab]');if(!g||e.button>0)return;
+  const i=+g.closest('.row').dataset.i;rd={i,end:endOf(i),y:e.clientY,moved:false,drop:null};
+  try{g.setPointerCapture(e.pointerId)}catch(_){}
+  e.preventDefault();
+});
+addEventListener('pointermove',e=>{
+  if(!rd)return;
+  const rows=[...document.querySelectorAll('#rows .row')];
+  if(!rd.moved){
+    if(Math.abs(e.clientY-rd.y)<4)return;
+    rd.moved=true;document.body.classList.add('rowdrag');
+    rows.forEach((r,k)=>{if(k>=rd.i&&k<rd.end)r.classList.add('dragging')});
+  }
+  rows.forEach(r=>r.classList.remove('drop-before','drop-after','drop-into'));
+  rd.drop=null;
+  const hb=$('#left .hd').getBoundingClientRect().bottom,wr=$('#wrap').getBoundingClientRect();
+  if(e.clientY<hb+30)$('#wrap').scrollTop-=14;else if(e.clientY>wr.bottom-40)$('#wrap').scrollTop+=14;
+  if(e.clientY<hb)return;
+  for(const row of rows){
+    if(row.offsetParent===null)continue;
+    const b=row.getBoundingClientRect();
+    if(e.clientY>=b.top&&e.clientY<b.bottom){
+      const ti=+row.dataset.i;if(ti>=rd.i&&ti<rd.end)return;
+      const f=(e.clientY-b.top)/b.height,zone=f<.3?'before':f>.7?'after':'into';
+      rd.drop={ti,zone};row.classList.add('drop-'+zone);return;
+    }
+  }
+});
+function endRowDrag(apply){
+  if(!rd)return;const d=rd;rd=null;clearDrop();document.body.classList.remove('rowdrag');
+  if(apply&&d.moved&&d.drop)moveBlock(d.i,d.drop.ti,d.drop.zone);
+}
+addEventListener('pointerup',()=>endRowDrag(true));
+addEventListener('pointercancel',()=>endRowDrag(false));
+addEventListener('keydown',e=>{if(e.key==='Escape')endRowDrag(false)});
+
 /* ---- resizable divider ---- */
 const leftEl=$('#left'),splitEl=$('#split');
 let lw=parseInt(localStorage.getItem('planline.lw'))||884,sd=false;
 const maxW=()=>Math.max(480,Math.min(1100,innerWidth-160));
 function setLeft(w,save){
   lw=Math.max(480,Math.min(maxW(),Math.round(w)));
-  leftEl.style.width=lw+'px';leftEl.dataset.t=lw>=860?'l':lw>=740?'m':lw>=650?'s':'x';
+  leftEl.style.width=lw+'px';leftEl.dataset.t=lw>=876?'l':lw>=756?'m':lw>=666?'s':'x';
   splitEl.setAttribute('aria-valuenow',lw);schedFit();
   if(save)try{localStorage.setItem('planline.lw',lw)}catch(e){}
 }
